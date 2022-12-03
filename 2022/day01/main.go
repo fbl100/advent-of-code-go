@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/alexchao26/advent-of-code-go/cast"
-	"github.com/alexchao26/advent-of-code-go/mathy"
 	"github.com/alexchao26/advent-of-code-go/util"
 )
 
@@ -41,39 +40,67 @@ func main() {
 }
 
 func part1(input string) int {
-	elves := parseInput(input)
+	parsed := parseInput(input)
 
-	totals := []int{}
-	for _, items := range elves {
-		totals = append(totals, mathy.SumIntSlice(items))
+	max := 0
+	for _, lst := range parsed {
+		calories := sum(lst)
+		if calories > max {
+			max = calories
+		}
 	}
 
-	return mathy.MaxInt(totals...)
+	return max
 }
 
 func part2(input string) int {
-	elves := parseInput(input)
+	parsed := parseInput(input)
 
-	totals := []int{}
-	for _, items := range elves {
-		totals = append(totals, mathy.SumIntSlice(items))
-	}
-	sort.Ints(totals)
+	var sums []int
 
-	topThree := 0
-	for i := 0; i < 3; i++ {
-		topThree += totals[len(totals)-1-i]
+	for _, lst := range parsed {
+		calories := sum(lst)
+		sums = append(sums, calories)
 	}
-	return topThree
+
+	sort.Ints(sums)
+	reverse(sums)
+
+	for _, x := range sums {
+		println(x)
+	}
+
+	return sums[0] + sums[1] + sums[2]
+
 }
 
 func parseInput(input string) (ans [][]int) {
-	for _, group := range strings.Split(input, "\n\n") {
-		row := []int{}
-		for _, line := range strings.Split(group, "\n") {
-			row = append(row, cast.ToInt(line))
+
+	var curr []int
+
+	for _, line := range strings.Split(input, "\n") {
+
+		if line != "" {
+			curr = append(curr, cast.ToInt(line))
+
+		} else {
+			ans = append(ans, curr)
+			curr = make([]int, 0) // clear
 		}
-		ans = append(ans, row)
+	}
+	return ans
+}
+
+func reverse(a []int) {
+	for i, j := 0, len(a)-1; i < j; i, j = i+1, j-1 {
+		a[i], a[j] = a[j], a[i]
+	}
+}
+
+func sum(arr []int) int {
+	ans := 0
+	for _, x := range arr {
+		ans += x
 	}
 	return ans
 }

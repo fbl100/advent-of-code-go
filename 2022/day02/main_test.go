@@ -57,3 +57,31 @@ func Test_part2(t *testing.T) {
 		})
 	}
 }
+
+func Test_scoreShape(t *testing.T) {
+	x := scoreShape("A")
+	if x != 1 {
+		t.Errorf("Expected scoreShape(A) == 1")
+	}
+	x = scoreShape("X")
+	if x != 1 {
+		t.Errorf("Expected scoreShape(B) == 1")
+	}
+	x = scoreShape("B")
+	if x != 2 {
+		t.Errorf("Expected scoreShape(A) == 2")
+	}
+	x = scoreShape("Y")
+	if x != 2 {
+		t.Errorf("Expected scoreShape(B) == 2")
+	}
+	x = scoreShape("C")
+	if x != 3 {
+		t.Errorf("Expected scoreShape(A) == 3")
+	}
+	x = scoreShape("Z")
+	if x != 3 {
+		t.Errorf("Expected scoreShape(B) == 3")
+	}
+
+}
