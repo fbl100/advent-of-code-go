@@ -41,3 +41,24 @@ func MultiplyIntSlice(nums []int) int {
 	}
 	return product
 }
+
+// Max returns the larger of x or y.
+func Max(x, y int) int {
+	if x < y {
+		return y
+	}
+	return x
+}
+
+// Min returns the smaller of x or y.
+func Min(x, y int) int {
+	if x > y {
+		return y
+	}
+	return x
+}
+
+func ClipInt(num int, lo int, hi int) int {
+	retVal := Min(Max(num, lo), hi)
+	return retVal
+}

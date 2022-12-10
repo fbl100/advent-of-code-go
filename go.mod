@@ -8,4 +8,5 @@ require (
 	golang.org/x/net v0.1.0
 	google.golang.org/grpc v1.51.0 // indirect
 	k8s.io/apimachinery v0.25.4 // indirect
+	k8s.io/gengo v0.0.0-20221011193443-fad74ee6edd9 // indirect
 )
