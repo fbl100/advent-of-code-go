@@ -17,28 +17,28 @@ import (
 var input string
 
 // IntSlice attaches the methods of Interface to []int, sorting in increasing order.
-type uint64Slice []uint64
+type intSlice []int
 
-func (x uint64Slice) Len() int           { return len(x) }
-func (x uint64Slice) Less(i, j int) bool { return x[i] < x[j] }
-func (x uint64Slice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x intSlice) Len() int           { return len(x) }
+func (x intSlice) Less(i, j int) bool { return x[i] < x[j] }
+func (x intSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
 type Monkey struct {
-	Index           uint64
-	Items           []uint64
+	Index           int
+	Items           []int
 	Equation        string
-	Test            uint64
-	IfTrue          uint64
-	IfFalse         uint64
-	InspectionCount uint64
+	Test            int
+	IfTrue          int
+	IfFalse         int
+	InspectionCount int
 }
 
-func (m *Monkey) EvaluateEquation(item uint64) uint64 {
+func (m *Monkey) EvaluateEquation(item int) int {
 	e := strings.ReplaceAll(m.Equation, "old", cast.ToString(item))
 	tokens := strings.Split(e, " ")
-	a := cast.ToUInt64(tokens[0])
+	a := cast.ToInt(tokens[0])
 	op := tokens[1]
-	b := cast.ToUInt64(tokens[2])
+	b := cast.ToInt(tokens[2])
 
 	if op == "+" {
 		return a + b
@@ -62,7 +62,7 @@ func (m *Monkey) InspectItem(monkeys []*Monkey, worryLevel int, verbose bool) {
 	if verbose {
 		fmt.Println("\tEquation ", m.Equation, " evaluates to ", x, ",")
 	}
-	x = x / uint64(worryLevel)
+	x = x / int(worryLevel)
 
 	if verbose {
 		fmt.Println("\tMonkey gets bored with item. Worry level is divided by 3 to ", x, ".")
@@ -124,7 +124,7 @@ func (m *Monkey) HoldingString() string {
 	return string(s)
 }
 
-func part1(input string) uint64 {
+func part1(input string) int {
 	monkeys := parseInput(input)
 
 	fmt.Println("Loaded ", len(monkeys), " Monkeys")
@@ -147,21 +147,21 @@ func part1(input string) uint64 {
 
 	}
 
-	counts := []uint64{}
+	counts := []int{}
 
 	for _, m := range monkeys {
 		fmt.Println("Monkey[", m.Index, "] inspected ", m.InspectionCount, " items.")
 		counts = append(counts, m.InspectionCount)
 	}
 
-	sort.Sort(sort.Reverse(uint64Slice(counts)))
+	sort.Sort(sort.Reverse(intSlice(counts)))
 	//sort.Ints(counts)
 	return counts[0] * counts[1]
 
 	return 0
 }
 
-func part2(input string) uint64 {
+func part2(input string) int {
 	monkeys := parseInput(input)
 
 	fmt.Println("Loaded ", len(monkeys), " Monkeys")
@@ -184,14 +184,14 @@ func part2(input string) uint64 {
 
 	}
 
-	counts := []uint64{}
+	counts := []int{}
 
 	for _, m := range monkeys {
 		fmt.Println("Monkey[", m.Index, "] inspected ", m.InspectionCount, " items.")
 		counts = append(counts, m.InspectionCount)
 	}
 
-	sort.Sort(sort.Reverse(uint64Slice(counts)))
+	sort.Sort(sort.Reverse(intSlice(counts)))
 	//sort.Ints(counts)
 	return counts[0] * counts[1]
 
@@ -216,12 +216,12 @@ func parseMonkey(lines []string) *Monkey {
 	reLine5 := regexp.MustCompile(`^\s*If true: throw to monkey (\d|)$`)
 	reLine6 := regexp.MustCompile(`^\s*If false: throw to monkey (\d|)$`)
 
-	monkeyNum := cast.ToUInt64(reLine1.FindStringSubmatch(lines[0])[1])
-	items := cast.StringListToUInt64List(strings.Split(reLine2.FindStringSubmatch(lines[1])[1], ", "))
+	monkeyNum := cast.ToInt(reLine1.FindStringSubmatch(lines[0])[1])
+	items := cast.StringListToIntList(strings.Split(reLine2.FindStringSubmatch(lines[1])[1], ", "))
 	equation := reLine3.FindStringSubmatch(lines[2])[1]
-	divisor := cast.ToUInt64(reLine4.FindStringSubmatch(lines[3])[1])
-	ifTrue := cast.ToUInt64(reLine5.FindStringSubmatch(lines[4])[1])
-	ifFalse := cast.ToUInt64(reLine6.FindStringSubmatch(lines[5])[1])
+	divisor := cast.ToInt(reLine4.FindStringSubmatch(lines[3])[1])
+	ifTrue := cast.ToInt(reLine5.FindStringSubmatch(lines[4])[1])
+	ifFalse := cast.ToInt(reLine6.FindStringSubmatch(lines[5])[1])
 
 	m := Monkey{
 		Index:           monkeyNum,
