@@ -10,7 +10,7 @@ import (
 
 // ToInt will case a given arg into an int type.
 // Supported types are:
-//    - string
+//   - string
 func ToInt(arg interface{}) int {
 	var val int
 	switch arg.(type) {
@@ -26,16 +26,53 @@ func ToInt(arg interface{}) int {
 	return val
 }
 
+// ToInt will case a given arg into an int type.
+// Supported types are:
+//   - string
+func ToInt64(arg interface{}) int64 {
+	var val int64
+	switch arg.(type) {
+	case string:
+		var err error
+		val, err = strconv.ParseInt(arg.(string), 10, 64)
+		if err != nil {
+			panic("error converting string to int " + err.Error())
+		}
+	default:
+		panic(fmt.Sprintf("unhandled type for int casting %T", arg))
+	}
+	return val
+}
+
+func ToUInt64(arg interface{}) uint64 {
+	var val uint64
+	switch arg.(type) {
+	case string:
+		var err error
+		val, err = strconv.ParseUint(arg.(string), 10, 64)
+		if err != nil {
+			panic("error converting string to int " + err.Error())
+		}
+	default:
+		panic(fmt.Sprintf("unhandled type for int casting %T", arg))
+	}
+	return val
+}
+
 // ToString will case a given arg into an int type.
 // Supported types are:
-//    - int
-//    - byte
-//    - rune
+//   - int
+//   - byte
+//   - rune
 func ToString(arg interface{}) string {
 	var str string
 	switch arg.(type) {
 	case int:
 		str = strconv.Itoa(arg.(int))
+	case int64:
+		str = strconv.FormatInt(arg.(int64), 10)
+	case uint64:
+		str = strconv.FormatUint(arg.(uint64), 10)
 	case byte:
 		b := arg.(byte)
 		str = string(rune(b))
@@ -76,4 +113,40 @@ func ToASCIICode(arg interface{}) int {
 // ASCIIIntToChar returns a one character string of the given int
 func ASCIIIntToChar(code int) string {
 	return string(rune(code))
+}
+
+func StringListToIntList(s []string) []int {
+
+	var retVal = make([]int, len(s))
+
+	for idx, i := range s {
+		j, err := strconv.Atoi(i)
+		if err != nil {
+			panic(err)
+		}
+		retVal[idx] = j
+	}
+	return retVal
+}
+
+func StringListToInt64List(s []string) []int64 {
+
+	var retVal = make([]int64, len(s))
+
+	for idx, i := range s {
+		j := ToInt64(i)
+		retVal[idx] = j
+	}
+	return retVal
+}
+
+func StringListToUInt64List(s []string) []uint64 {
+
+	var retVal = make([]uint64, len(s))
+
+	for idx, i := range s {
+		j := ToUInt64(i)
+		retVal[idx] = j
+	}
+	return retVal
 }
