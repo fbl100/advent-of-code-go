@@ -13,7 +13,7 @@ import (
 	"github.com/alexchao26/advent-of-code-go/util"
 )
 
-//go:embed input_small.txt
+//go:embed input.txt
 var input string
 
 // IntSlice attaches the methods of Interface to []int, sorting in increasing order.
@@ -62,7 +62,7 @@ func (m *Monkey) InspectItem(monkeys []*Monkey, worryLevel int, verbose bool) {
 	if verbose {
 		fmt.Println("\tEquation ", m.Equation, " evaluates to ", x, ",")
 	}
-	x = x / int(worryLevel)
+	x = x % worryLevel
 
 	if verbose {
 		fmt.Println("\tMonkey gets bored with item. Worry level is divided by 3 to ", x, ".")
@@ -139,11 +139,11 @@ func part1(input string) int {
 			}
 		}
 
-		fmt.Println("After Round ", r+1, ":")
-		for i, m := range monkeys {
-			fmt.Println("Monkey[", i, "] is holding: ", m.HoldingString())
-		}
-		fmt.Println()
+		//fmt.Println("After Round ", r+1, ":")
+		//for i, m := range monkeys {
+		//	fmt.Println("Monkey[", i, "] is holding: ", m.HoldingString())
+		//}
+		//fmt.Println()
 
 	}
 
@@ -164,6 +164,11 @@ func part1(input string) int {
 func part2(input string) int {
 	monkeys := parseInput(input)
 
+	gcd := 1
+	for _, m := range monkeys {
+		gcd *= m.Test
+	}
+
 	fmt.Println("Loaded ", len(monkeys), " Monkeys")
 	rounds := 10000
 
@@ -172,15 +177,15 @@ func part2(input string) int {
 			_ = i
 			//fmt.Println("Monkey: ", i)
 			for len(m.Items) > 0 {
-				m.InspectItem(monkeys, 1, false)
+				m.InspectItem(monkeys, gcd, false)
 			}
 		}
 
-		fmt.Println("After Round ", r+1, ":")
-		for i, m := range monkeys {
-			fmt.Println("Monkey[", i, "] is holding: ", m.HoldingString())
-		}
-		fmt.Println()
+		//fmt.Println("After Round ", r+1, ":")
+		//for i, m := range monkeys {
+		//	fmt.Println("Monkey[", i, "] is holding: ", m.HoldingString())
+		//}
+		//fmt.Println()
 
 	}
 
