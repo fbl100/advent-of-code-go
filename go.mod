@@ -1,6 +1,6 @@
 module github.com/alexchao26/advent-of-code-go
 
-go 1.16
+go 1.19
 
 require (
 	github.com/stretchr/testify v1.8.1 // indirect

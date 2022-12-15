@@ -46,8 +46,31 @@ func (h *Heap[T]) up(jj int) {
 }
 
 func (h *Heap[T]) down() {
+	//n := h.Len()
+	h.downFromIndex(0)
+	//n := h.Len() - 1
+	//i1 := 0
+	//for {
+	//	j1 := left(i1)
+	//	if j1 >= n || j1 < 0 {
+	//		break
+	//	}
+	//	j := j1
+	//	j2 := right(i1)
+	//	if j2 < n && h.comp(h.data[j2], h.data[j1]) {
+	//		j = j2
+	//	}
+	//	if !h.comp(h.data[j], h.data[i1]) {
+	//		break
+	//	}
+	//	h.swap(i1, j)
+	//	i1 = j
+	//}
+}
+
+func (h *Heap[T]) downFromIndex(i int) {
 	n := h.Len() - 1
-	i1 := 0
+	i1 := i
 	for {
 		j1 := left(i1)
 		if j1 >= n || j1 < 0 {
@@ -66,26 +89,6 @@ func (h *Heap[T]) down() {
 	}
 }
 
-func (h *Heap[T]) downFromIndex(i0, n int) bool {
-	i := i0
-	for {
-		j1 := 2*i + 1
-		if j1 >= n || j1 < 0 { // j1 < 0 after int overflow
-			break
-		}
-		j := j1 // left child
-		if j2 := j1 + 1; j2 < n && h.Less(j2, j1) {
-			j = j2 // = 2*i + 2  // right child
-		}
-		if !h.Less(j, i) {
-			break
-		}
-		h.Swap(i, j)
-		i = j
-	}
-	return i > i0
-}
-
 // Init establishes the heap invariants required by the other routines in this package.
 // Init is idempotent with respect to the heap invariants
 // and may be called whenever the heap invariants may have been invalidated.
@@ -93,9 +96,19 @@ func (h *Heap[T]) downFromIndex(i0, n int) bool {
 func (h *Heap[T]) ReHeapify() {
 	// heapify
 	n := h.Len()
-	for i := n/2 - 1; i >= 0; i-- {
-		down(h, i, n)
+	for i := n-1; i >= 0; i-- {
+		h.downFromIndex(i)
 	}
+}
+
+func (h *Heap[T]) Init(items []T) {
+	h.data = append(h.data, items...)
+	h.ReHeapify()
+}
+
+func (h *Heap[T]) Top() T {
+	v := h.data[0]
+	return v
 }
 
 func parent(i int) int { return (i - 1) / 2 }
