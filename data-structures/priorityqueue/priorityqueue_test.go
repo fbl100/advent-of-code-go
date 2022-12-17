@@ -7,7 +7,7 @@ import (
 )
 
 func TestHeap_Push(t *testing.T) {
-	h := NewHeap( func(a,b int) bool { return a < b})
+	h := NewHeap(func(a, b int) bool { return a < b })
 
 	for i := 0; i < 100; i++ {
 		h.Push(rand.Int() % 5000)
@@ -31,14 +31,12 @@ func TestHeap_Push(t *testing.T) {
 
 type Person struct {
 	Name string
-	Age int
+	Age  int
 }
-
-
 
 func TestHeap_Push_PeoplePointers(t *testing.T) {
 
-	people := []*Person {
+	people := []*Person{
 		{"Frank", 47},
 		{"Sarah", 40},
 		{"Steph", 47},
@@ -48,13 +46,26 @@ func TestHeap_Push_PeoplePointers(t *testing.T) {
 	}
 
 	h := NewHeap(func(a, b *Person) bool {
-		return a.Age < b.Age
+		//if a.Age <= b.Age {
+		//	fmt.Printf("%v (age %v) <= %v (age (%v)\n", a.Name, a.Age, b.Name, b.Age)
+		//} else {
+		//	fmt.Printf("%v (age %v) > %v (age (%v)\n", a.Name, a.Age, b.Name, b.Age)
+		//}
+		return a.Age <= b.Age
 	})
 
+	//           [0]
+	//       [1]     [2]
+	//     [3] [4] [5] [6]
 	h.Init(people)
-	//for _,p := range(people) {
-	//	h.Push(p)
+	h.check()
+	//
+	//for _, p := range people {
+	//	p.Age = rand.Int()
 	//}
+	//
+	//h.ReHeapify()
+	//h.check()
 
 	// every item should be less than the prior
 	x := h.Top()
@@ -64,6 +75,7 @@ func TestHeap_Push_PeoplePointers(t *testing.T) {
 			panic("que order messed up")
 		}
 		x = h.Pop()
+		h.check()
 		fmt.Println(x.Name)
 	}
 
