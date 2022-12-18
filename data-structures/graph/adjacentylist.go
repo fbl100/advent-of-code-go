@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/alexchao26/advent-of-code-go/data-structures/priorityqueue"
+	"github.com/alexchao26/advent-of-code-go/data-structures/heap"
 	"math"
 )
 
@@ -51,7 +51,7 @@ func (g *AdjacencyList[V]) GetVertices() []*V {
 func (g *AdjacencyList[V]) ShortestPath(from *V, to *V) int {
 
 	dist := map[*V]int{}
-	q := priorityqueue.NewHeap(func(a, b *V) bool {
+	q := heap.NewHeap(func(a, b *V) bool {
 		return dist[a] < dist[b]
 	})
 	for v := range g.Vertices {
@@ -87,7 +87,7 @@ func (g *AdjacencyList[V]) DjikstraDistances(start *V) map[*V]int {
 	dist := map[*V]int{}
 	prev := map[*V]*V{}
 
-	q := priorityqueue.NewHeap(func(a, b *V) bool {
+	q := heap.NewHeap(func(a, b *V) bool {
 		return dist[a] <= dist[b]
 	})
 

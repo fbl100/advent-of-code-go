@@ -1,25 +1,25 @@
-package priorityqueue
+package heap
 
 // found on https://levelup.gitconnected.com/a-heap-of-go-generics-cd20f362a76
 // required login, but it's the best example of generics I've seen
 
-type Heap[T any] struct {
+type GenericHeap[T any] struct {
 	data []T
 	comp func(a, b T) bool
 }
 
-func NewHeap[T any](comp func(a, b T) bool) *Heap[T] {
-	return &Heap[T]{comp: comp}
+func NewHeap[T any](comp func(a, b T) bool) *GenericHeap[T] {
+	return &GenericHeap[T]{comp: comp}
 }
 
-func (h *Heap[T]) Len() int { return len(h.data) }
+func (h *GenericHeap[T]) Len() int { return len(h.data) }
 
-func (h *Heap[T]) Push(v T) {
+func (h *GenericHeap[T]) Push(v T) {
 	h.data = append(h.data, v)
 	h.up(h.Len() - 1)
 }
 
-func (h *Heap[T]) Pop() T {
+func (h *GenericHeap[T]) Pop() T {
 	n := h.Len() - 1
 	if n > 0 {
 		h.swap(0, n)
@@ -31,11 +31,11 @@ func (h *Heap[T]) Pop() T {
 	return v
 }
 
-func (h *Heap[T]) swap(i, j int) {
+func (h *GenericHeap[T]) swap(i, j int) {
 	h.data[i], h.data[j] = h.data[j], h.data[i]
 }
 
-func (h *Heap[T]) up(jj int) {
+func (h *GenericHeap[T]) up(jj int) {
 	for {
 		i := parent(jj)
 		if i == jj || !h.comp(h.data[jj], h.data[i]) {
@@ -46,7 +46,7 @@ func (h *Heap[T]) up(jj int) {
 	}
 }
 
-func (h *Heap[t]) down(i0, n int) bool {
+func (h *GenericHeap[t]) down(i0, n int) bool {
 	i := i0
 	for {
 		j1 := left(i)
@@ -66,8 +66,8 @@ func (h *Heap[t]) down(i0, n int) bool {
 	return i > i0
 }
 
-func (h *Heap[T]) check() {
-	//fmt.Println("Checking Heap Property")
+func (h *GenericHeap[T]) check() {
+	//fmt.Println("Checking GenericHeap Property")
 	lastParent := parent(h.Len() - 1)
 	for i := 0; i <= lastParent; i++ {
 		l := left(i)
@@ -82,7 +82,7 @@ func (h *Heap[T]) check() {
 }
 
 //
-//func (h *Heap[T]) down() {
+//func (h *GenericHeap[T]) down() {
 //	//n := h.Len()
 //	h.downFromIndex(0)
 //	//n := h.Len() - 1
@@ -105,7 +105,7 @@ func (h *Heap[T]) check() {
 //	//}
 //}
 //
-//func (h *Heap[T]) downFromIndex(i int) {
+//func (h *GenericHeap[T]) downFromIndex(i int) {
 //	n := h.Len()
 //	i1 := i
 //	for {
@@ -130,7 +130,7 @@ func (h *Heap[T]) check() {
 // Init is idempotent with respect to the heap invariants
 // and may be called whenever the heap invariants may have been invalidated.
 // The complexity is O(n) where n = h.Len().
-func (h *Heap[T]) ReHeapify() {
+func (h *GenericHeap[T]) ReHeapify() {
 	// put the elements of h in heap order, in-place
 	n := (h.Len()) / 2
 	for i := n - 1; i >= 0; i-- {
@@ -138,12 +138,12 @@ func (h *Heap[T]) ReHeapify() {
 	}
 }
 
-func (h *Heap[T]) Init(items []T) {
+func (h *GenericHeap[T]) Init(items []T) {
 	h.data = append(h.data, items...)
 	h.ReHeapify()
 }
 
-func (h *Heap[T]) Top() T {
+func (h *GenericHeap[T]) Top() T {
 	v := h.data[0]
 	return v
 }
