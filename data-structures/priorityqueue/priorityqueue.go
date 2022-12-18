@@ -23,6 +23,7 @@ func (h *Heap[T]) Pop() T {
 	n := h.Len() - 1
 	if n > 0 {
 		h.swap(0, n)
+
 		h.down(0, h.Len()-1)
 	}
 	v := h.data[n]

@@ -1,12 +1,11 @@
 package main
 
 import (
-	"container/heap"
 	_ "embed"
 	"flag"
 	"fmt"
+	"github.com/alexchao26/advent-of-code-go/data-structures/graph"
 	"github.com/alexchao26/advent-of-code-go/mathy"
-	"math"
 	"strings"
 
 	"github.com/alexchao26/advent-of-code-go/util"
@@ -16,24 +15,25 @@ import (
 var input string
 
 type Edge struct {
-	Weight int
+	Weight      int
 	TargetIndex int
 }
 
 type Vertex struct {
+	Name  string
 	Index int
 	Value rune
-	Edges []*Edge
 }
 
-
-
-
+type VertexNode struct {
+	Vertex *Vertex
+	Dist   int
+}
 
 type Graph struct {
 	Vertices map[int]*Vertex
-	Start int
-	End int
+	Start    int
+	End      int
 }
 
 type Index struct {
@@ -43,11 +43,8 @@ type Index struct {
 
 type HeapNode struct {
 	vertex *Vertex
-	dist *map[int]int
-
+	dist   *map[int]int
 }
-
-
 
 func init() {
 	// do this in init (not main) so test file has same input
@@ -75,60 +72,31 @@ func main() {
 }
 
 func part1(input string) int {
-	g := parseInput(input)
+	g, start, end := parseInput(input)
 
-	dist := map[int]int{}
-	prev := map[int]int{}
+	x := g.ShortestPath(start, end)
 
-	Q := []HeapNode{}
-
-	for _, v := range(g.Vertices) {
-		dist[v.Index] = math.MaxInt
-		Q = append(Q, HeapNode{
-			vertex: v,
-			dist:   &dist,
-		})
-	}
-
-	heap.Init(Q)
-
-	dist[g.Start] = 0
-
-	for Q.Length() > 0 {
-	}
-
-	//function Dijkstra(Graph, source):
-	//2
-	//3      for each vertex v in Graph.Vertices:
-	//4          dist[v] ← INFINITY
-	//5          prev[v] ← UNDEFINED
-	//6          add v to Q
-	//7      dist[source] ← 0
-	//8
-	//9      while Q is not empty:
-	//10          u ← vertex in Q with min dist[u]
-	//11          remove u from Q
-	//12
-	//13          for each neighbor v of u still in Q:
-	//14              alt ← dist[u] + Graph.Edges(u, v)
-	//15              if alt < dist[v]:
-	//16                  dist[v] ← alt
-	//17                  prev[v] ← u
-	//18
-	//19      return dist[], prev[]
-	// find 'S' and 'E'
-
-	_ = parsed
-
-	return 0
+	fmt.Printf("Best = %v\n", x)
+	
+	return x
 }
-
 
 func part2(input string) int {
+	g, _, end := parseInput(input)
+
+	dist := g.ShortestPathTree(end)
+
+	for _, v := range g.GetVertices() {
+		if v.Value == rune('a') {
+			d := dist[v]
+			fmt.Println(d)
+		}
+
+	}
 	return 0
 }
 
-func neighborIndices(row int, col int, numRows int, numCols int) (ans []Index){
+func neighborIndices(row int, col int, numRows int, numCols int) (ans []Index) {
 
 	for dr := -1; dr <= 1; dr++ {
 		for dc := -1; dc <= 1; dc++ {
@@ -159,19 +127,16 @@ func neighborIndices(row int, col int, numRows int, numCols int) (ans []Index){
 
 }
 
+func parseInput(input string) (*graph.AdjacencyList[Vertex], *Vertex, *Vertex) {
 
-func parseInput(input string) (g *Graph) {
-
-	g = &Graph{
-		Vertices: map[int]*Vertex{},
-	}
+	gg := graph.NewAdjacencyList[Vertex]()
 
 	// parse the runes
 	mx := [][]rune{}
 
 	for _, line := range strings.Split(input, "\n") {
 		row := []rune{}
-		for _,c := range(line) {
+		for _, c := range line {
 			row = append(row, c)
 		}
 		mx = append(mx, row)
@@ -180,58 +145,73 @@ func parseInput(input string) (g *Graph) {
 	rows := len(mx)
 	cols := len(mx[0])
 
-	start := -1
-	end := -1
+	var start *Vertex
+	var end *Vertex
 
-	// find the start/end times
+	vertices := []*Vertex{}
+
+	// find the start/end times and add the vertices
 	for r := 0; r < rows; r++ {
 		for c := 0; c < cols; c++ {
-			i := r*cols + c
+			i := rowcol2index(r, c, cols)
+
+			var v *Vertex
 			if mx[r][c] == rune('S') {
-				start = i
 				mx[r][c] = 'a'
-			}
-
-			if mx[r][c] == rune('E') {
-				end = i
-				mx[r][c] = 'z'
-			}
-
-		}
-	}
-
-	g.Start = start
-	g.End = end
-
-	for r := 0; r < rows; r++ {
-		for c := 0; c < cols; c++ {
-
-			i := r*cols + c
-
-			v := Vertex{
-				Index: i,
-				Value: mx[r][c],
-				Edges: nil,
-			}
-
-
-			for _, index := range neighborIndices(r,c, rows, cols) {
-
-				weight := mx[index.Row][index.Col] - mx[r][c]
-				targetIndex := index.Row * cols + index.Col
-
-				e := Edge{
-					Weight: int(weight),
-					TargetIndex: targetIndex,
+				v = &Vertex{
+					Name:  fmt.Sprintf("r=%v c=%v char=%v (START)", r, c, string(mx[r][c])),
+					Index: i,
+					Value: 'a',
 				}
 
-				v.Edges = append(v.Edges, &e)
+				start = v
+			} else if mx[r][c] == rune('E') {
+				mx[r][c] = 'z'
+				v = &Vertex{
+					Name:  fmt.Sprintf("r=%v c=%v char=%v (END)", r, c, string(mx[r][c])),
+					Index: i,
+					Value: 'z',
+				}
+				end = v
+			} else {
+				v = &Vertex{
+					Name:  fmt.Sprintf("r=%v c=%v char=%v", r, c, string(mx[r][c])),
+					Index: i,
+					Value: mx[r][c],
+				}
 			}
 
-			g.Vertices[i] = &v
+			vertices = append(vertices, v)
 
 		}
 	}
 
-	return g
+	for _, v := range vertices {
+		gg.AddVertex(v)
+	}
+
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+
+			i := rowcol2index(r, c, cols)
+
+			for _, index := range neighborIndices(r, c, rows, cols) {
+
+				diff := mx[index.Row][index.Col] - mx[r][c]
+				if diff <= 1 {
+					targetIndex := rowcol2index(index.Row, index.Col, cols)
+
+					gg.AddEdge(vertices[i], vertices[targetIndex], 1)
+
+				}
+
+			}
+		}
+	}
+
+	return gg, start, end
+}
+
+func rowcol2index(row, col, numCols int) int {
+	return row*numCols + col
 }
