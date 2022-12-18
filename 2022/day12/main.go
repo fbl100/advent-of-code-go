@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"github.com/alexchao26/advent-of-code-go/data-structures/graph"
 	"github.com/alexchao26/advent-of-code-go/mathy"
+	"golang.org/x/exp/slices"
+	"math"
 	"strings"
 
 	"github.com/alexchao26/advent-of-code-go/util"
 )
 
-//go:embed input_small.txt
+//go:embed input.txt
 var input string
 
 type Edge struct {
@@ -19,31 +21,24 @@ type Edge struct {
 	TargetIndex int
 }
 
+type VertexType int
+
+const (
+	Start VertexType = 0
+	End              = 1
+	Other            = 2
+)
+
 type Vertex struct {
 	Name  string
 	Index int
 	Value rune
-}
-
-type VertexNode struct {
-	Vertex *Vertex
-	Dist   int
-}
-
-type Graph struct {
-	Vertices map[int]*Vertex
-	Start    int
-	End      int
+	Type  VertexType
 }
 
 type Index struct {
 	Row int
 	Col int
-}
-
-type HeapNode struct {
-	vertex *Vertex
-	dist   *map[int]int
 }
 
 func init() {
@@ -72,28 +67,47 @@ func main() {
 }
 
 func part1(input string) int {
-	g, start, end := parseInput(input)
+	g := parseInputPart1(input)
+	vertices := g.GetVertices()
+	start := slices.IndexFunc(vertices, func(v *Vertex) bool { return v.Type == Start })
+	end := slices.IndexFunc(vertices, func(v *Vertex) bool { return v.Type == End })
 
-	x := g.ShortestPath(start, end)
+	x := g.ShortestPath(vertices[start], vertices[end])
 
 	fmt.Printf("Best = %v\n", x)
-	
+
 	return x
+
 }
 
 func part2(input string) int {
-	g, _, end := parseInput(input)
 
-	dist := g.ShortestPathTree(end)
+	g := parseInputPart2(input)
+	vertices := g.GetVertices()
 
-	for _, v := range g.GetVertices() {
-		if v.Value == rune('a') {
-			d := dist[v]
-			fmt.Println(d)
+	start := []*Vertex{}
+	end := []*Vertex{}
+
+	for _, v := range vertices {
+		if v.Type == Start {
+			start = append(start, v)
+		} else if v.Type == End {
+			end = append(end, v)
 		}
-
 	}
-	return 0
+
+	x := g.DjikstraDistances(end[0])
+
+	min := math.MaxInt
+	for _, v := range start {
+		// there are islands of a's that you cannot use as start points
+		if x[v] != math.MaxInt {
+			fmt.Printf("%+v - %v\n", v, x[v])
+			min = mathy.Min(min, x[v])
+		}
+	}
+
+	return min
 }
 
 func neighborIndices(row int, col int, numRows int, numCols int) (ans []Index) {
@@ -127,12 +141,109 @@ func neighborIndices(row int, col int, numRows int, numCols int) (ans []Index) {
 
 }
 
-func parseInput(input string) (*graph.AdjacencyList[Vertex], *Vertex, *Vertex) {
+func parseInputPart1(input string) *graph.AdjacencyList[Vertex] {
 
 	gg := graph.NewAdjacencyList[Vertex]()
 
-	// parse the runes
-	mx := [][]rune{}
+	mx, rows, cols := parseGraph(input)
+
+	vertices := createVerticesPart1(mx, rows, cols)
+
+	for _, v := range vertices {
+		gg.AddVertex(v)
+	}
+
+	addEdgesPart1(gg, rows, cols, mx, vertices)
+
+	return gg
+}
+
+func parseInputPart2(input string) *graph.AdjacencyList[Vertex] {
+
+	gg := graph.NewAdjacencyList[Vertex]()
+
+	mx, rows, cols := parseGraph(input)
+
+	vertices := createVerticesPart2(mx, rows, cols)
+
+	for _, v := range vertices {
+		gg.AddVertex(v)
+	}
+
+	addEdgesPart2(gg, rows, cols, mx, vertices)
+
+	return gg
+}
+
+func createVerticesPart1(mx [][]rune, rows, cols int) (vertices []*Vertex) {
+
+	isStart := func(r rune) bool {
+		return r == 'S'
+	}
+	isEnd := func(r rune) bool {
+		return r == 'E'
+	}
+
+	return createVertices(mx, rows, cols, isStart, isEnd)
+
+}
+
+func createVerticesPart2(mx [][]rune, rows, cols int) (vertices []*Vertex) {
+
+	isStart := func(r rune) bool {
+		return r == 'S' || r == 'a'
+	}
+	isEnd := func(r rune) bool {
+		return r == 'E'
+	}
+
+	return createVertices(mx, rows, cols, isStart, isEnd)
+
+}
+
+func createVertices(mx [][]rune, rows, cols int, isStart func(r rune) bool, isEnd func(r rune) bool) (vertices []*Vertex) {
+
+	//vertices := []*Vertex{}
+
+	// find the start/end times and add the vertices
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			i := rowcol2index(r, c, cols)
+
+			var v *Vertex
+			if isStart(mx[r][c]) {
+				mx[r][c] = 'a'
+				v = &Vertex{
+					Name:  fmt.Sprintf("r=%v c=%v char=%v (START)", r, c, string(mx[r][c])),
+					Index: i,
+					Value: 'a',
+					Type:  Start,
+				}
+			} else if isEnd(mx[r][c]) {
+				mx[r][c] = 'z'
+				v = &Vertex{
+					Name:  fmt.Sprintf("r=%v c=%v char=%v (END)", r, c, string(mx[r][c])),
+					Index: i,
+					Value: 'z',
+					Type:  End,
+				}
+			} else {
+				v = &Vertex{
+					Name:  fmt.Sprintf("r=%v c=%v char=%v", r, c, string(mx[r][c])),
+					Index: i,
+					Value: mx[r][c],
+					Type:  Other,
+				}
+			}
+
+			vertices = append(vertices, v)
+		}
+	}
+
+	return vertices
+}
+
+func parseGraph(input string) (mx [][]rune, rows, cols int) {
 
 	for _, line := range strings.Split(input, "\n") {
 		row := []rune{}
@@ -142,74 +253,59 @@ func parseInput(input string) (*graph.AdjacencyList[Vertex], *Vertex, *Vertex) {
 		mx = append(mx, row)
 	}
 
-	rows := len(mx)
-	cols := len(mx[0])
+	rows = len(mx)
+	cols = len(mx[0])
+	return mx, rows, cols
+}
 
-	var start *Vertex
-	var end *Vertex
-
-	vertices := []*Vertex{}
-
-	// find the start/end times and add the vertices
-	for r := 0; r < rows; r++ {
-		for c := 0; c < cols; c++ {
-			i := rowcol2index(r, c, cols)
-
-			var v *Vertex
-			if mx[r][c] == rune('S') {
-				mx[r][c] = 'a'
-				v = &Vertex{
-					Name:  fmt.Sprintf("r=%v c=%v char=%v (START)", r, c, string(mx[r][c])),
-					Index: i,
-					Value: 'a',
-				}
-
-				start = v
-			} else if mx[r][c] == rune('E') {
-				mx[r][c] = 'z'
-				v = &Vertex{
-					Name:  fmt.Sprintf("r=%v c=%v char=%v (END)", r, c, string(mx[r][c])),
-					Index: i,
-					Value: 'z',
-				}
-				end = v
-			} else {
-				v = &Vertex{
-					Name:  fmt.Sprintf("r=%v c=%v char=%v", r, c, string(mx[r][c])),
-					Index: i,
-					Value: mx[r][c],
-				}
-			}
-
-			vertices = append(vertices, v)
-
-		}
-	}
-
-	for _, v := range vertices {
-		gg.AddVertex(v)
-	}
-
+func addEdgesPart1(gg *graph.AdjacencyList[Vertex], rows, cols int, mx [][]rune, vertices []*Vertex) {
 	for r := 0; r < rows; r++ {
 		for c := 0; c < cols; c++ {
 
 			i := rowcol2index(r, c, cols)
-
 			for _, index := range neighborIndices(r, c, rows, cols) {
 
 				diff := mx[index.Row][index.Col] - mx[r][c]
 				if diff <= 1 {
 					targetIndex := rowcol2index(index.Row, index.Col, cols)
-
 					gg.AddEdge(vertices[i], vertices[targetIndex], 1)
-
 				}
 
 			}
 		}
 	}
 
-	return gg, start, end
+}
+
+func addEdgesPart2(gg *graph.AdjacencyList[Vertex], rows, cols int, mx [][]rune, vertices []*Vertex) {
+	// for the reverse path, we can step down at most one
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+
+			// from is the current square
+			from := mx[r][c]
+
+			i := rowcol2index(r, c, cols)
+			for _, index := range neighborIndices(r, c, rows, cols) {
+
+				// to is the neighbor
+				to := mx[index.Row][index.Col]
+
+				// edge is if the neighbor is at most -1 from 'from'
+				diff := to - from
+				// if from is 20
+				//    to is 19
+				// to - from = -1
+
+				if diff >= -1 {
+					targetIndex := rowcol2index(index.Row, index.Col, cols)
+					gg.AddEdge(vertices[i], vertices[targetIndex], 1)
+				}
+
+			}
+		}
+	}
+
 }
 
 func rowcol2index(row, col, numCols int) int {

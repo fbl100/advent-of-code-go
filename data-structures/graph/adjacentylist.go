@@ -83,35 +83,40 @@ func (g *AdjacencyList[V]) ShortestPath(from *V, to *V) int {
 
 }
 
-func (g *AdjacencyList[V]) ShortestPathTree(from *V) map[*V]int {
-
+func (g *AdjacencyList[V]) DjikstraDistances(start *V) map[*V]int {
 	dist := map[*V]int{}
+	prev := map[*V]*V{}
+
 	q := priorityqueue.NewHeap(func(a, b *V) bool {
-		return dist[a] < dist[b]
+		return dist[a] <= dist[b]
 	})
+
 	for v := range g.Vertices {
 		dist[v] = math.MaxInt
+		prev[v] = nil
 	}
-	dist[from] = 0
 
-	q.Init(g.GetVertices())
-
-	// 	h := NewHeap(func(a, b int) bool { return a < b })
+	dist[start] = 0
+	q.Push(start)
 
 	for q.Len() > 0 {
 
 		next := q.Pop()
+
 		//fmt.Printf("Relaxing %+v with dist %v\n", *next, dist[next])
 		adj := g.GetNeighbors(next)
 		for _, e := range adj {
 
 			d := dist[next] + e.Weight
+			if d < 0 {
+				panic("overflow?!?")
+			}
 			if d < dist[e.Vertex] {
 				dist[e.Vertex] = d
+				prev[e.Vertex] = next
+				q.Push(e.Vertex)
 			}
-
 		}
-		q.ReHeapify()
 	}
 
 	return dist
