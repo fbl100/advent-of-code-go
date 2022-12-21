@@ -184,7 +184,7 @@ func part2(input string) int {
 
 	halp.PrintInfiniteGridStrings(g.Coords, ".")
 
-	return count
+	return count + 1
 }
 
 func parseInput(input string) (ans []Wall) {
