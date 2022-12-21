@@ -24,7 +24,54 @@ type Wall struct {
 	Pairs []Pair
 }
 
-type Grid [][]string
+type Grid struct {
+	MinC    int
+	MaxC    int
+	MinR    int
+	MaxR    int
+	Default string
+	Coords  map[[2]int]string
+}
+
+func NewGrid() *Grid {
+	g := Grid{
+		MinC:    math.MaxInt,
+		MaxC:    math.MinInt,
+		MinR:    math.MaxInt,
+		MaxR:    math.MinInt,
+		Default: ".",
+		Coords:  map[[2]int]string{},
+	}
+	return &g
+}
+
+func (g *Grid) Get(c, r int) (string, error) {
+	// out of bounds, return the default character and an error
+	// the user can decide if they care about the error or not
+	if c < g.MinC || c > g.MaxC || r < g.MinR || r > g.MaxR {
+		return g.Default, AbyssError{}
+	}
+
+	// we are within the bounds of the grid, so go ahead and return the value if we have one, or '.' if not
+	// in this case, we don't return an error because it's technically in bounds
+	retVal, ok := g.Coords[[2]int{c, r}]
+	if ok {
+		return retVal, nil
+	} else {
+		return g.Default, nil
+	}
+
+}
+
+func (g *Grid) Put(c, r int, s string) {
+
+	g.MinC = mathy.Min(g.MinC, c)
+	g.MaxC = mathy.Max(g.MaxC, c)
+	g.MinR = mathy.Min(g.MinR, r)
+	g.MaxR = mathy.Max(g.MaxR, r)
+
+	g.Coords[[2]int{c, r}] = s
+}
 
 type AbyssError struct {
 }
@@ -72,10 +119,10 @@ func part1(input string) int {
 
 	fmt.Println(maxCol, maxRow)
 
-	g := makeGrid(maxCol, maxRow)
+	g := NewGrid()
 
 	for _, w := range parsed {
-		drawWall(&g, w)
+		drawWall(g, w)
 	}
 
 	printGrid(g, 494, 503, 0, 9)
@@ -84,7 +131,7 @@ func part1(input string) int {
 	done := false
 	count := 0
 	for !done {
-		stopped := sand(&g, 500, 0)
+		stopped := sand(g, 500, 0)
 		if stopped {
 			count++
 		} else {
@@ -122,22 +169,12 @@ func parseWall(input string) (ans Wall) {
 	return ans
 }
 
-func makeGrid(cols, rows int) Grid {
-	mx := make([][]string, cols+1)
-	for c := range mx {
-		mx[c] = make([]string, rows+1)
-		for r := range mx[c] {
-			mx[c][r] = "."
-		}
-	}
-	return mx
-}
-
-func printGrid(grid Grid, startCol, endCol, startRow, endRow int) {
+func printGrid(grid *Grid, startCol, endCol, startRow, endRow int) {
 
 	for r := startRow; r <= endRow; r++ {
 		for c := startCol; c <= endCol; c++ {
-			fmt.Print(grid[c][r])
+			cell, _ := grid.Get(c, r)
+			fmt.Print(cell)
 		}
 		fmt.Println()
 	}
@@ -156,7 +193,7 @@ func drawWall(grid *Grid, wall Wall) {
 
 		for c := startCol; c <= endCol; c++ {
 			for r := startRow; r <= endRow; r++ {
-				(*grid)[c][r] = "#"
+				grid.Put(c, r, "#")
 			}
 		}
 	}
@@ -166,18 +203,20 @@ func sand(grid *Grid, startCol, startRow int) bool {
 	c := startCol
 	r := startRow
 
-	for r < len((*grid)[0]) {
+	maxRow := grid.MaxR
+
+	for {
 		// if there is space at r+1, increment r
-		x, err := getChar(grid, c, r+1)
-		if err != nil {
+		x, err := grid.Get(c, r+1)
+		if err != nil && r+1 > maxRow {
 			return false
 		} else if x == "." {
 			r++
 			continue
 		}
 
-		x, err = getChar(grid, c-1, r+1)
-		if err != nil {
+		x, err = grid.Get(c-1, r+1)
+		if err != nil && r+1 > maxRow {
 			return false
 		} else if x == "." {
 			c--
@@ -185,8 +224,8 @@ func sand(grid *Grid, startCol, startRow int) bool {
 			continue
 		}
 
-		x, err = getChar(grid, c+1, r+1)
-		if err != nil {
+		x, err = grid.Get(c+1, r+1)
+		if err != nil && r+1 > maxRow {
 			return false
 		} else if x == "." {
 			c++
@@ -195,25 +234,8 @@ func sand(grid *Grid, startCol, startRow int) bool {
 		}
 
 		// we got here
-		(*grid)[c][r] = "o"
+		grid.Put(c, r, "o")
 		return true
 	}
 	panic("should never get here")
-}
-
-func getChar(grid *Grid, c, r int) (string, error) {
-	if c < 0 {
-		// off the left
-		return "*", AbyssError{}
-	}
-
-	if c > len(*grid) {
-		return "*", AbyssError{}
-	}
-
-	if r >= len((*grid)[0]) {
-		return "*", AbyssError{}
-	}
-
-	return (*grid)[c][r], nil
 }
