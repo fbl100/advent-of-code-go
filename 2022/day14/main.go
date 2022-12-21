@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"github.com/alexchao26/advent-of-code-go/halp"
 	"github.com/alexchao26/advent-of-code-go/mathy"
 	"math"
 	"strconv"
@@ -30,15 +31,17 @@ type Grid struct {
 	MinR    int
 	MaxR    int
 	Default string
+	Floor   int
 	Coords  map[[2]int]string
 }
 
-func NewGrid() *Grid {
+func NewGrid(floor int) *Grid {
 	g := Grid{
 		MinC:    math.MaxInt,
 		MaxC:    math.MinInt,
 		MinR:    math.MaxInt,
 		MaxR:    math.MinInt,
+		Floor:   floor,
 		Default: ".",
 		Coords:  map[[2]int]string{},
 	}
@@ -46,6 +49,11 @@ func NewGrid() *Grid {
 }
 
 func (g *Grid) Get(c, r int) (string, error) {
+
+	if r >= g.Floor {
+		return "#", AbyssError{}
+	}
+
 	// out of bounds, return the default character and an error
 	// the user can decide if they care about the error or not
 	if c < g.MinC || c > g.MaxC || r < g.MinR || r > g.MaxR {
@@ -119,14 +127,11 @@ func part1(input string) int {
 
 	fmt.Println(maxCol, maxRow)
 
-	g := NewGrid()
+	g := NewGrid(math.MaxInt)
 
 	for _, w := range parsed {
 		drawWall(g, w)
 	}
-
-	printGrid(g, 494, 503, 0, 9)
-	println()
 
 	done := false
 	count := 0
@@ -137,15 +142,49 @@ func part1(input string) int {
 		} else {
 			done = true
 		}
-		printGrid(g, 494, 503, 0, 9)
-		println()
-	}
 
+	}
+	println()
+	halp.PrintInfiniteGridStrings(g.Coords, " ")
 	return count
 }
 
 func part2(input string) int {
-	return 0
+	parsed := parseInput(input)
+	maxCol := math.MinInt
+	maxRow := math.MinInt
+
+	for _, w := range parsed {
+		for _, p := range w.Pairs {
+			maxCol = mathy.Max(maxCol, p.Col)
+			maxRow = mathy.Max(maxRow, p.Row)
+		}
+	}
+
+	g := NewGrid(maxRow + 2)
+
+	for _, w := range parsed {
+		drawWall(g, w)
+	}
+
+	halp.PrintInfiniteGridStrings(g.Coords, ".")
+
+	done := false
+	count := 0
+	for !done {
+		stopped := sand_part2(g, 500, 0)
+		if stopped {
+			count++
+		} else {
+			done = true
+		}
+	}
+
+	fmt.Println()
+
+	halp.PrintInfiniteGridStrings(g.Coords, ".")
+
+	return count
 }
 
 func parseInput(input string) (ans []Wall) {
@@ -169,17 +208,6 @@ func parseWall(input string) (ans Wall) {
 	return ans
 }
 
-func printGrid(grid *Grid, startCol, endCol, startRow, endRow int) {
-
-	for r := startRow; r <= endRow; r++ {
-		for c := startCol; c <= endCol; c++ {
-			cell, _ := grid.Get(c, r)
-			fmt.Print(cell)
-		}
-		fmt.Println()
-	}
-}
-
 func drawWall(grid *Grid, wall Wall) {
 	for i := 0; i < len(wall.Pairs)-1; i++ {
 		this := wall.Pairs[i]
@@ -197,6 +225,44 @@ func drawWall(grid *Grid, wall Wall) {
 			}
 		}
 	}
+}
+
+func sand_part2(grid *Grid, startCol, startRow int) bool {
+	c := startCol
+	r := startRow
+
+	for {
+		// if there is space at r+1, increment r
+		x, _ := grid.Get(c, r+1)
+		if x == "." {
+			r++
+			continue
+		}
+
+		x, _ = grid.Get(c-1, r+1)
+		if x == "." {
+			c--
+			r++
+			continue
+		}
+
+		x, _ = grid.Get(c+1, r+1)
+		if x == "." {
+			c++
+			r++
+			continue
+		}
+
+		if c == startCol && r == startRow {
+			// we blocked the hole
+			return false
+		}
+
+		// we hit something, so place the grain of sand
+		grid.Put(c, r, "o")
+		return true
+	}
+	panic("should never get here")
 }
 
 func sand(grid *Grid, startCol, startRow int) bool {
