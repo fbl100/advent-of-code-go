@@ -83,7 +83,7 @@ func (g *AdjacencyList[V]) ShortestPath(from *V, to *V) int {
 
 }
 
-func (g *AdjacencyList[V]) DjikstraDistances(start *V) map[*V]int {
+func (g *AdjacencyList[V]) DjikstraDistances(start *V) (map[*V]int, map[*V]*V) {
 	dist := map[*V]int{}
 	prev := map[*V]*V{}
 
@@ -119,6 +119,6 @@ func (g *AdjacencyList[V]) DjikstraDistances(start *V) map[*V]int {
 		}
 	}
 
-	return dist
+	return dist, prev
 
 }
