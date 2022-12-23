@@ -89,7 +89,37 @@ func part1(input string) int {
 }
 
 func part2(input string) int {
+
+	records := parseInput(input)
+
+	allPoints := map[[2]int]bool{}
+
+	for _, r := range records {
+		points := manhattanRing(r.SensorX, r.SensorY, r.ManhattanDist()+1)
+
+		for _, p := range points {
+			if p[0] >= 0 && p[1] >= 0 && p[0] <= 4000000 && p[1] <= 4000000 {
+				if visibleCount(p, records) == 0 {
+					return p[0]*4000000 + p[1]
+				}
+			}
+		}
+	}
+
+	fmt.Println("Checking ", len(allPoints), " points")
+
 	return 0
+}
+
+func visibleCount(point [2]int, records []Record) int {
+	count := 0
+	for _, r := range records {
+		d := mathy.ManhattanDistance(point[0], point[1], r.SensorX, r.SensorY)
+		if d <= r.ManhattanDist() {
+			count++
+		}
+	}
+	return count
 }
 
 func parseInput(input string) (ans []Record) {
@@ -104,4 +134,29 @@ func parseInput(input string) (ans []Record) {
 		})
 	}
 	return ans
+}
+
+func manhattanRing(x, y, dist int) [][2]int {
+
+	ans := [][2]int{}
+
+	for dx := 0; dx <= dist; dx++ {
+
+		if dx == 0 {
+			ans = append(ans, [2]int{x, y + (dist - dx)})
+			ans = append(ans, [2]int{x, y - (dist - dx)})
+		} else if dx == dist {
+			ans = append(ans, [2]int{dx, y})
+			ans = append(ans, [2]int{-dx, y})
+		} else {
+			ans = append(ans, [2]int{x + dx, y + (dist - dx)})
+			ans = append(ans, [2]int{x - dx, y + (dist - dx)})
+			ans = append(ans, [2]int{x - dx, y - (dist - dx)})
+			ans = append(ans, [2]int{x + dx, y - (dist - dx)})
+
+		}
+	}
+
+	return ans
+
 }
