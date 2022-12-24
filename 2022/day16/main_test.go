@@ -57,3 +57,51 @@ func Test_part2(t *testing.T) {
 		})
 	}
 }
+
+func TestProblemState_Step_(t *testing.T) {
+	ps := ProblemState{
+		Steps:      1,
+		FlowRate:   3,
+		TotalFlow:  0,
+		OpenValves: []string{"AA"},
+	}
+
+	ps = ps.Step(1)
+	if ps.Steps != 2 {
+		panic("step mismatch")
+	}
+	if ps.TotalFlow != 3 {
+		panic("flow mismatcb")
+	}
+}
+
+func TestProblemState_OpenValve(t *testing.T) {
+	ps := ProblemState{
+		Steps:      0,
+		FlowRate:   0,
+		TotalFlow:  0,
+		OpenValves: []string{},
+	}
+
+	ps = ps.OpenValve("CC", 3)
+	if ps.Steps != 1 {
+		panic("step mismatch")
+	}
+	if ps.TotalFlow != 0 {
+		panic("flow mismatcb")
+	}
+	if ps.FlowRate != 3 {
+		panic("flow mismatcb")
+	}
+	ps = ps.Step(5)
+	if ps.Steps != 6 {
+		panic("step mismatch")
+	}
+	if ps.TotalFlow != 15 {
+		panic("flow mismatcb")
+	}
+	if ps.FlowRate != 3 {
+		panic("flow mismatcb")
+	}
+
+}

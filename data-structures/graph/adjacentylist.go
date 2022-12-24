@@ -3,6 +3,7 @@ package graph
 import (
 	"github.com/alexchao26/advent-of-code-go/data-structures/heap"
 	"math"
+	"strings"
 )
 
 type VertexValue[V any] struct {
@@ -30,6 +31,12 @@ func (g *AdjacencyList[V]) AddVertex(vertex *V) {
 }
 
 func (g *AdjacencyList[V]) AddEdge(from *V, to *V, weight int) {
+	if from == nil {
+		panic("from should not be null")
+	}
+	if to == nil {
+		panic("to should not be null")
+	}
 	g.Vertices[from] = append(g.Vertices[from], WeightedEdge[V]{
 		Vertex: to,
 		Weight: weight,
@@ -121,4 +128,43 @@ func (g *AdjacencyList[V]) DjikstraDistances(start *V) (map[*V]int, map[*V]*V) {
 
 	return dist, prev
 
+}
+
+func (g *AdjacencyList[V]) ToDot(
+	vertexName func(*V) string,
+	vertexStyle func(*V) string,
+	edgeStyle func(edge WeightedEdge[V]) string) string {
+
+	template := `
+digraph G {
+rankdir=LR	
+$CONTENT$
+}
+`
+	var vertexBuilder strings.Builder
+	for _, v := range g.GetVertices() {
+		vertexBuilder.WriteString("\t" + vertexName(v) + " [" + vertexStyle(v) + "]\n")
+	}
+
+	for _, v := range g.GetVertices() {
+		for _, e := range g.GetNeighbors(v) {
+			s := vertexName(v) + " ->" + vertexName(e.Vertex) + " [" + edgeStyle(e) + "]"
+			vertexBuilder.WriteString("\t" + s + "\n")
+		}
+	}
+
+	retVal := strings.Replace(template, "$CONTENT$", vertexBuilder.String(), 1)
+	return retVal
+	//		`digraph G {
+	//    AA [label="AA (0)"]
+	//    CC [label="CC (0)" style=filled fillcolor=blue]
+	//    AA -> BB [label="1"]
+	//    BB -> CC
+	//    CC -> {DD, AA}
+	//    DD -> EE [style=filled fillcolor=red]
+	//    EE -> FF
+	//    FF -> GG
+	//    GG -> { HH, AA}
+	//}
+	//`
 }
