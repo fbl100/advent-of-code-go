@@ -65,6 +65,31 @@ func PrintInfiniteGridStringsCR(infiniteGrid map[[2]int]string, zeroValChar stri
 	fmt.Println(sb.String())
 }
 
+func PrintInfiniteGridStringsCR_reversedRows(infiniteGrid map[[2]int]string, zeroValChar string) {
+	// get bounds
+	var firstRow, lastRow, firstCol, lastCol int
+	for coord := range infiniteGrid {
+		firstRow = mathy.MinInt(firstRow, coord[1])
+		lastRow = mathy.MaxInt(lastRow, coord[1])
+		firstCol = mathy.MinInt(firstCol, coord[0])
+		lastCol = mathy.MaxInt(lastCol, coord[0])
+	}
+
+	var sb strings.Builder
+	for r := lastRow; r >= firstRow; r-- {
+		for c := firstCol; c <= lastCol; c++ {
+			coord := [2]int{c, r}
+			if val, ok := infiniteGrid[coord]; ok {
+				sb.WriteString(val)
+			} else {
+				sb.WriteString(zeroValChar)
+			}
+		}
+		sb.WriteString("\n")
+	}
+	fmt.Println(sb.String())
+}
+
 // convertMapBoolsToMapStrings is a helper function for printing map[[2]int]bool
 // The return map can be passed into PrintInfiniteGridStrings
 func convertMapBoolsToMapStrings(m map[[2]int]bool, trueChar, falseChar string) map[[2]int]string {
