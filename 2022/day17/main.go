@@ -310,6 +310,7 @@ func determineCycle(v []State) (*StateDiff, error) {
 		// check to see if it's an even skip to 1000000000000
 		lastH := v[len(v)-1].NumBlocks
 		remaining := 1000000000000 - lastH
+
 		if remaining%delta.DeltaBlockCount == 0 {
 			return &delta, nil
 		} else {

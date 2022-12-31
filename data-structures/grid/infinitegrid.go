@@ -64,10 +64,3 @@ func (g *InfiniteGrid) Put(c, r int, s string) {
 
 	g.Coords[[2]int{c, r}] = s
 }
-
-type AbyssError struct {
-}
-
-func (m AbyssError) Error() string {
-	return "Fell off the world"
-}
