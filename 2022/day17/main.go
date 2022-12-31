@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/alexchao26/advent-of-code-go/data-structures/grid"
@@ -13,6 +14,31 @@ import (
 
 //go:embed input.txt
 var input string
+
+type State struct {
+	StackHeight int
+	NumBlocks   int
+}
+
+func (b State) Diff(a State) StateDiff {
+	return StateDiff{
+		DeltaStackHeight: b.StackHeight - a.StackHeight,
+		DeltaBlockCount:  b.NumBlocks - a.NumBlocks,
+	}
+}
+
+func (a StateDiff) Equals(b StateDiff) bool {
+	return a.DeltaStackHeight == b.DeltaStackHeight && a.DeltaBlockCount == b.DeltaBlockCount
+}
+
+type StateDiff struct {
+	DeltaStackHeight int
+	DeltaBlockCount  int
+}
+
+type IndexPair [2]int
+
+type StateMap map[IndexPair][]State
 
 type Piece struct {
 	// ReferencePixels are relative to a (0,0) bottom/left
@@ -100,48 +126,8 @@ func main() {
 }
 
 func part1(input string) int {
-	parsed := parseInput(input)
-	_ = parsed
 
-	//####
-	//
-	//.#.
-	//###
-	//.#.
-	//
-	//..#
-	//..#
-	//###
-	//
-	//#
-	//#
-	//#
-	//#
-	//
-	//##
-	//##
-
-	p1 := NewPiece([]string{"####"})
-	p2 := NewPiece([]string{
-		" # ",
-		"###",
-		" # "})
-
-	p3 := NewPiece([]string{
-		"  #",
-		"  #",
-		"###"})
-	p4 := NewPiece([]string{
-		"#",
-		"#",
-		"#",
-		"#"})
-
-	p5 := NewPiece([]string{
-		"##",
-		"##"})
-
-	pieces := []*Piece{p1, p2, p3, p4, p5}
+	pieces := makePieces()
 
 	grid := grid.NewInfiniteGridNoFloor()
 
@@ -213,8 +199,242 @@ func Move(horizontal, vertical, left, bottom int, coords [][2]int, g *grid.Infin
 	return left + horizontal, bottom + vertical
 }
 
+func makePieces() []*Piece {
+
+	p1 := NewPiece([]string{"####"})
+	p2 := NewPiece([]string{
+		" # ",
+		"###",
+		" # "})
+
+	p3 := NewPiece([]string{
+		"  #",
+		"  #",
+		"###"})
+	p4 := NewPiece([]string{
+		"#",
+		"#",
+		"#",
+		"#"})
+
+	p5 := NewPiece([]string{
+		"##",
+		"##"})
+
+	pieces := []*Piece{p1, p2, p3, p4, p5}
+	return pieces
+
+}
+
+func makeGrid() *grid.InfiniteGrid {
+
+	grid := grid.NewInfiniteGridNoFloor()
+
+	// add the floor
+	for c := 0; c < 7; c++ {
+		grid.Put(c, 0, "-")
+	}
+
+	return grid
+}
+
 func part2(input string) int {
-	return 0
+
+	pieces := makePieces()
+
+	grid := makeGrid()
+
+	idx := runFixedStopCount(grid, pieces, 100000, 0, 0)
+
+	var toPieceIndex int
+	var toMoveIndex int
+	var stateDiff *StateDiff
+
+	for k, v := range idx {
+
+		if len(v) > 1 {
+			dx, err := determineCycle(v)
+			if err != nil {
+				fmt.Println(k[0], ",", k[1], " --> ", err.Error())
+			} else {
+				fmt.Println(k[0], ",", k[1], " --> ", dx.DeltaBlockCount, "/", dx.DeltaStackHeight)
+				if stateDiff == nil || dx.DeltaBlockCount > stateDiff.DeltaBlockCount {
+					toPieceIndex = k[0]
+					toMoveIndex = k[1]
+					stateDiff = dx
+					fmt.Println(k[0], ",", k[1], " --> ", dx)
+				}
+			}
+		}
+
+	}
+
+	// rebuild
+	grid = makeGrid()
+	count := runToIndex(grid, pieces, 0, 0, toPieceIndex, toMoveIndex)
+
+	fmt.Println("Dropped ", count, " blocks")
+	goal := 1000000000000
+	remaining := goal - count
+	fmt.Println("Need ", remaining, " more")
+	skipCycles := remaining / stateDiff.DeltaBlockCount
+	skipHeight := skipCycles * stateDiff.DeltaStackHeight
+	skipBlocks := skipCycles * stateDiff.DeltaBlockCount
+	fmt.Println("Skipping ", skipCycles, " cycles and adding ", skipHeight, " to the stack")
+	remainingBlocks := remaining % stateDiff.DeltaBlockCount
+	fmt.Println("There are ", count+skipBlocks, " drops blocked, ", remainingBlocks, " remain")
+
+	//currentHeight := grid.MaxR
+
+	h1 := grid.MaxR
+	runFixedStopCount(grid, pieces, remainingBlocks, toPieceIndex, toMoveIndex)
+
+	h2 := grid.MaxR
+	dh := h2 - h1
+	fmt.Println("Added ", dh, " to the stack")
+	ans := h1 + dh + skipHeight
+
+	return ans
+}
+
+func determineCycle(v []State) (*StateDiff, error) {
+	if len(v) > 2 {
+		delta := v[1].Diff(v[0])
+		for i := 2; i < len(v); i++ {
+			dv := v[i].Diff(v[i-1])
+			if !dv.Equals(delta) {
+				return nil, errors.New("not a cycle")
+			}
+		}
+
+		// check to see if it's an even skip to 1000000000000
+		lastH := v[len(v)-1].NumBlocks
+		remaining := 1000000000000 - lastH
+		if remaining%delta.DeltaBlockCount == 0 {
+			return &delta, nil
+		} else {
+			return nil, errors.New("Not a good candidate")
+		}
+
+	} else {
+		return nil, errors.New("not enough data")
+	}
+
+}
+
+func runFixedStopCount(grid *grid.InfiniteGrid, pieces []*Piece, count int, startPieceIndex int, startMoveIndex int) StateMap {
+
+	// [piece index][move index] -> stack height after the piece stops
+	retVal := StateMap{}
+
+	pieceIndex := startPieceIndex
+	moveIndex := startMoveIndex
+	bottom := grid.MaxR + 4
+	left := 2
+	stopCount := 0
+	for stopCount < count {
+		// apply a move
+		move := string(input[moveIndex])
+
+		coords := pieces[pieceIndex].GetPositons(left, bottom)
+		switch move {
+		case "<":
+			left, bottom = Move(-1, 0, left, bottom, coords, grid)
+			coords = pieces[pieceIndex].GetPositons(left, bottom)
+		case ">":
+			left, bottom = Move(1, 0, left, bottom, coords, grid)
+			coords = pieces[pieceIndex].GetPositons(left, bottom)
+		}
+
+		// now try the horizontal move
+		_, newBott := Move(0, -1, left, bottom, coords, grid)
+
+		if newBott != bottom {
+			// we were able to move
+			bottom = newBott
+		} else {
+			// unable to move, add the piece to the grid
+			Move(0, -1, left, bottom, coords, grid)
+			coords = pieces[pieceIndex].GetPositons(left, bottom)
+			for _, coord := range coords {
+				grid.Put(coord[0], coord[1], "#")
+			}
+
+			stopCount++ // increment stop count
+
+			indexPair := IndexPair{pieceIndex, moveIndex}
+			retVal[indexPair] = append(retVal[indexPair], State{
+				StackHeight: grid.MaxR,
+				NumBlocks:   stopCount,
+			})
+
+			pieceIndex = (pieceIndex + 1) % len(pieces)
+			bottom = grid.MaxR + 4
+			left = 2
+
+		}
+		moveIndex = (moveIndex + 1) % len(input)
+	}
+
+	return retVal
+}
+
+func runToIndex(grid *grid.InfiniteGrid, pieces []*Piece, fromPieceIndex, fromMoveIndex, toPieceIndex, toMoveIndex int) int {
+
+	// [piece index][move index] -> stack height after the piece stops
+	//heightIndex := map[[2]int][]int{}
+
+	pieceIndex := fromPieceIndex
+	moveIndex := fromMoveIndex
+	bottom := grid.MaxR + 4
+	left := 2
+	stopCount := 0
+	cycleCount := 0
+	for {
+		// apply a move
+		move := string(input[moveIndex])
+
+		coords := pieces[pieceIndex].GetPositons(left, bottom)
+		switch move {
+		case "<":
+			left, bottom = Move(-1, 0, left, bottom, coords, grid)
+			coords = pieces[pieceIndex].GetPositons(left, bottom)
+		case ">":
+			left, bottom = Move(1, 0, left, bottom, coords, grid)
+			coords = pieces[pieceIndex].GetPositons(left, bottom)
+		}
+
+		// now try the horizontal move
+		_, newBott := Move(0, -1, left, bottom, coords, grid)
+
+		if newBott != bottom {
+			// we were able to move
+			bottom = newBott
+		} else {
+			// unable to move, add the piece to the grid
+			Move(0, -1, left, bottom, coords, grid)
+			coords = pieces[pieceIndex].GetPositons(left, bottom)
+			for _, coord := range coords {
+				grid.Put(coord[0], coord[1], "#")
+			}
+
+			stopCount++ // increment stop count
+
+			if pieceIndex == toPieceIndex && moveIndex == toMoveIndex {
+				cycleCount++
+				if cycleCount == 100 {
+					return stopCount
+				}
+			}
+
+			pieceIndex = (pieceIndex + 1) % len(pieces)
+			bottom = grid.MaxR + 4
+			left = 2
+
+		}
+		moveIndex = (moveIndex + 1) % len(input)
+	}
+
 }
 
 func parseInput(input string) (ans string) {
